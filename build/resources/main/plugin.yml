@@ -1,0 +1,12 @@
+name: Pet_Manager
+version: '1.0'
+main: mc.jabifx.pet_Manager.Pet_Manager
+api-version: '1.21'
+commands:
+  pets:
+    description: "Manages pet-related actions and opens pet interfaces."
+    usage: "/pets [admin]"
+    aliases: [pet]
+    arguments:
+      admin:
+        description: "Opens the Admin Pet GUI (requires pets.admin permission)."
