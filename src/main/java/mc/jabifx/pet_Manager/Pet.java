@@ -1,13 +1,15 @@
 package mc.jabifx.pet_Manager;
 
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.Creature;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -45,7 +47,7 @@ public class Pet implements ConfigurationSerializable {
 
     // Serializar el objeto a un mapa
     @Override
-    public Map<String, Object> serialize() {
+    public @NotNull Map<String, Object> serialize() {
         Map<String, Object> map = new HashMap<>();
         map.put("ownerName", ownerName);
         map.put("id", id);
@@ -59,18 +61,31 @@ public class Pet implements ConfigurationSerializable {
         if (followTask != null && !followTask.isCancelled()) return;
         equipped = true;
         owner = player;
+
         EntityType entityType = EntityType.valueOf(type.toUpperCase());
 
         Location spawnLocation = owner.getLocation().add(2, 0, 0);
         pet = (Creature) owner.getWorld().spawnEntity(spawnLocation, entityType);
-
-        pet.setCustomName(name);
+        pet.customName(Component.text(name));
         pet.setCustomNameVisible(true);
         pet.setInvulnerable(true);
         pet.setPersistent(true);
         pet.setRemoveWhenFarAway(false);
 
+        this.setSize();
         this.setupAI();
+    }
+
+    private void setSize() {
+        var currentScale = Objects.requireNonNull(pet.getAttribute(Attribute.GENERIC_SCALE)).getBaseValue();
+        if(currentScale == 0.5) return;
+
+        double size = 0.75;
+        if(Objects.equals(type, "WITHER") || Objects.equals(type, "HORSE") || Objects.equals(type, "DONKEY")) size = 0.5;
+
+        var scaleAttribute = pet.getAttribute(Attribute.GENERIC_SCALE);
+        assert scaleAttribute != null;
+        scaleAttribute.setBaseValue(size);
     }
 
     private void setupAI() {
@@ -83,25 +98,20 @@ public class Pet implements ConfigurationSerializable {
                         Location ownerLocation = owner.getLocation();
                         Location petLocation = pet.getLocation();
 
-                        if (ownerLocation.distance(petLocation) > 5) {
-                            pet.teleport(ownerLocation);
-                        }
-                        else if (ownerLocation.distance(petLocation) > 5 && ownerLocation.distance(petLocation) < 3) {
-                            Vector vec1 = ownerLocation.toVector();
-                            Vector vec2 = petLocation.toVector();
+                        double distance = ownerLocation.distance(petLocation);
 
-                            Vector move = vec2.subtract(vec1);
-
-                            pet.setVelocity(move.multiply(-0.3));
-                        }
-                    } else deSpawnPet();
+                        if (distance > 10)  pet.teleport(ownerLocation);
+                        else if (distance > 3) pet.getPathfinder().moveTo(ownerLocation, 1.1);
+                    }
+                    else deSpawnPet(true);
                 },
                 0L, 20L
         );
     }
 
-    public void deSpawnPet() {
+    public void deSpawnPet(boolean disconnect) {
         if (pet != null) {
+            if (!disconnect) equipped = false;
             Location loc = pet.getLocation();
             loc.setY(-100);
             pet.teleport(loc);
@@ -118,9 +128,7 @@ public class Pet implements ConfigurationSerializable {
 
     public void setName(String name){
         this.name = name;
-        if(pet != null){
-            pet.setCustomName(name);
-        }
+        if(pet != null) pet.customName(Component.text(name));
     }
 
     public Integer getId() {

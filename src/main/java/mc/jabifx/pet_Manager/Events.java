@@ -13,7 +13,6 @@ import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
@@ -23,7 +22,7 @@ import java.util.Objects;
 
 public class Events implements Listener {
 
-    private Pet_Manager plugin;
+    private final Pet_Manager plugin;
 
     public Events(Pet_Manager plugin) {
         this.plugin = plugin;
@@ -35,14 +34,20 @@ public class Events implements Listener {
     }
 
     @EventHandler
-    public void onEntitySpawn(EntitySpawnEvent event) {
-        if (event.getEntity() instanceof Projectile) {
-            Projectile projectile = (Projectile) event.getEntity();
+    public void onEntityChangeBlock(EntityChangeBlockEvent event) {
+        for (Pet pet : plugin.getAllPlayerPets()) {
+            if (pet.getPet() == event.getEntity()) {
+                event.setCancelled(true);
+            }
+        }
+    }
 
+    @EventHandler
+    public void onEntitySpawn(EntitySpawnEvent event) {
+        if (event.getEntity() instanceof Projectile projectile) {
             for (Pet pet : plugin.getAllPlayerPets()) {
                 if (projectile.getShooter() == pet.getPet()) {
                     event.setCancelled(true);
-                    plugin.getLogger().info("Cancelled spawn and sound for projectile from pet: " + pet.getPet().getName());
                     break;
                 }
             }
@@ -50,15 +55,28 @@ public class Events implements Listener {
     }
 
     @EventHandler
-    public void onProjectileLaunch(ProjectileLaunchEvent event) {
-        if (event.getEntity() instanceof Projectile) {
-            Projectile projectile = (Projectile) event.getEntity();
+    public void onEntityTame(EntityTameEvent event) {
+        for (Pet pet : plugin.getAllPlayerPets()) {
+            if (pet.getPet() == event.getEntity()) event.setCancelled(true);
+        }
+    }
 
-            for (Pet pet : plugin.getAllPlayerPets()) {
-                if (projectile.getShooter() == pet.getPet()) {
-                    event.setCancelled(true);
-                    break;
-                }
+    @EventHandler
+    public void onEntityDamage(EntityDamageEvent event) {
+        for (Pet pet : plugin.getAllPlayerPets()) {
+            if (pet.getPet() == event.getEntity()) event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onProjectileLaunch(ProjectileLaunchEvent event) {
+        event.getEntity();
+        Projectile projectile = (Projectile) event.getEntity();
+
+        for (Pet pet : plugin.getAllPlayerPets()) {
+            if (projectile.getShooter() == pet.getPet()) {
+                event.setCancelled(true);
+                break;
             }
         }
     }
@@ -67,18 +85,14 @@ public class Events implements Listener {
     @EventHandler
     public void onEntityTargetEvent(EntityTargetEvent event) {
         for (Pet pet : plugin.getAllPlayerPets()) {
-            if (pet.getPet() == event.getEntity()) {
-                event.setCancelled(true);
-            }
+            if (pet.getPet() == event.getEntity()) event.setCancelled(true);
         }
     }
 
     @EventHandler
     public void onEntityTargetLivingEntity(EntityTargetLivingEntityEvent event) {
         for (Pet pet : plugin.getAllPlayerPets()) {
-            if (pet.getPet() == event.getEntity()) {
-                event.setCancelled(true);
-            }
+            if (pet.getPet() == event.getEntity()) event.setCancelled(true);
         }
     }
 
@@ -207,14 +221,12 @@ public class Events implements Listener {
             List<String> lore = meta.getLore();
             if (lore == null || lore.isEmpty()) return;
 
-            String petName = meta.getDisplayName(); // Get pet name
             String petType = null;
             Integer petId = null;
 
             for (String line : lore) {
-                if (line.startsWith(ChatColor.GRAY + "Type: ")) {
-                    petType = line.replace(ChatColor.GRAY + "Type: ", "");
-                } else if (line.startsWith(ChatColor.DARK_GRAY + "ID: ")) {
+                if (line.startsWith(ChatColor.GRAY + "Type: ")) petType = line.replace(ChatColor.GRAY + "Type: ", "");
+                else if (line.startsWith(ChatColor.DARK_GRAY + "ID: ")) {
                     try {
                         petId = Integer.parseInt(line.replace(ChatColor.DARK_GRAY + "ID: ", ""));
                     } catch (NumberFormatException e) {
@@ -256,7 +268,7 @@ public class Events implements Listener {
 
                                     Pet pet = plugin.getPet(finalPetId);
                                     if (pet != null) {
-                                        pet.setName(newPetName); // Cambiar el nombre de la mascota
+                                        pet.setName(newPetName);
                                         player.sendMessage(ChatColor.GREEN + "Pet name changed to: " + newPetName);
                                     }
                                     HandlerList.unregisterAll(this);

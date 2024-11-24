@@ -28,7 +28,6 @@ public class Commands implements CommandExecutor {
 
             if (args.length == 0) {
                 if (player.hasPermission("pets.user")) plugin.openPetGUI(player, null);
-                else player.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
             }
             else if (args.length == 1) {
                 if (args[0].equalsIgnoreCase("admin")) {
@@ -49,9 +48,7 @@ public class Commands implements CommandExecutor {
                         return true;
                     }
                     StringBuilder message = new StringBuilder("Pets of " + target.getName() + ":");
-                    for (Pet pet : Pets) {
-                        message.append("\n- Type: ").append(pet.getType()).append(", ID: ").append(pet.getId());
-                    }
+                    for (Pet pet : Pets) message.append("\n- Type: ").append(pet.getType()).append(", ID: ").append(pet.getId());
                     sender.sendMessage(ChatColor.YELLOW + message.toString());
                 }
                 else if (args[0].equalsIgnoreCase("addall")) {
@@ -82,11 +79,8 @@ public class Commands implements CommandExecutor {
                     try {
                         if (!player.hasPermission("pets.remove")) return true;
                         Integer id = Integer.valueOf(args[2]);
-                        if (plugin.removePet(id)) {
-                            player.sendMessage(ChatColor.GREEN + "Pet successfully removed.");
-                        } else {
-                            player.sendMessage(ChatColor.RED + "No pet found with the specified ID.");
-                        }
+                        if (plugin.removePet(id)) player.sendMessage(ChatColor.GREEN + "Pet successfully removed.");
+                        else player.sendMessage(ChatColor.RED + "No pet found with the specified ID.");
                     } catch (NumberFormatException e) {
                         player.sendMessage(ChatColor.RED + "Invalid pet ID. Please enter a valid number.");
                     }
@@ -96,7 +90,6 @@ public class Commands implements CommandExecutor {
         return true;
     }
 
-
     private void openAdminGUI(Player player) {
         Inventory gui = plugin.getServer().createInventory(null, 54, ChatColor.DARK_RED + "Admin panel");
         int slot = 0;
@@ -104,13 +97,13 @@ public class Commands implements CommandExecutor {
             ItemStack playerSkull = new ItemStack(Material.PLAYER_HEAD);
             SkullMeta skullMeta = (SkullMeta) playerSkull.getItemMeta();
 
-            if (skullMeta != null) {
-                skullMeta.setDisplayName(ChatColor.YELLOW + onlinePlayer.getName());
-                skullMeta.setOwningPlayer(onlinePlayer);
-                playerSkull.setItemMeta(skullMeta);
-                gui.setItem(slot, playerSkull);
-                slot++;
-            }
+            if (skullMeta == null) continue;
+
+            skullMeta.setDisplayName(ChatColor.YELLOW + onlinePlayer.getName());
+            skullMeta.setOwningPlayer(onlinePlayer);
+            playerSkull.setItemMeta(skullMeta);
+            gui.setItem(slot, playerSkull);
+            slot++;
         }
 
         player.openInventory(gui);

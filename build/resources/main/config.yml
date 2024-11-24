@@ -1,4 +1,4 @@
-maximum equipped pets: 4
+maximum equipped pets: 1
 spawn pets on join: true
 # To add more: https://www.spigotmc.org/wiki/entitytypes/
 available pets:
@@ -9,9 +9,6 @@ available pets:
   - WITHER
   - DONKEY
   - GUARDIAN
-  - ZOMBIE
-  - SKELETON
-  - CREEPER
   - ALLAY
   - VEX
   - PARROT
